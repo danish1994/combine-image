@@ -1,6 +1,6 @@
 {
   "name": "combine-image",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Combine multiple images into a single image",
   "author": "Danish Kamal <danish5095@gmail.com>",
   "main": "lib/index.js",

@@ -1,6 +1,6 @@
 # combine-image
 
-[![NPM](https://nodei.co/npm/keystone-s3-upload-adapter.png)](https://nodei.co/npm/combine-image/)
+[![NPM](https://nodei.co/npm/combine-image.png)](https://nodei.co/npm/combine-image/)
 
 > Combine multiple images into a single image
 
