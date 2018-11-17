@@ -3,99 +3,100 @@ import Jimp, {read} from 'jimp';
 import calcMargin from './utils/calcMargin';
 
 export default async function combineImage(images, {
-  direction = 'col',
-  color = 0x00000000,
-  offset = 0,
-  margin,
-  shrink = true
+    direction = 'col',
+    color = 0x00000000,
+    offset = 0,
+    margin,
+    shrink = true
 } = {}) {
-  if (!Array.isArray(images)) {
-    throw new TypeError('`images` must be an array that contains images');
-  }
-
-  if (images.length < 1) {
-    throw new Error('At least `images` must contain more than one image');
-  }
-
-  const processImg = (img) => {
-    if (isPlainObj(img)) {
-      const {src} = img;
-
-      return read(src)
-        .then((imgObj) => ({
-          img: imgObj,
-        }));
+    if (!Array.isArray(images)) {
+        throw new TypeError('`images` must be an array that contains images');
     }
 
-    return read(img).then((imgObj) => ({img: imgObj}));
-  };
+    if (images.length < 1) {
+        throw new Error('At least `images` must contain more than one image');
+    }
 
-  direction = (direction === 'row');
-  const minMaxFunc = shrink ? 'min' : 'max';
+    const processImg = (img) => {
+        if (isPlainObj(img)) {
+            const {src} = img;
 
-  let imgs = await Promise.all(images.map(processImg));
-
-  let imgData = imgs.reduce((res, {img}) => {
-    const {bitmap: {width, height}} = img;
-
-    res.push({
-      img,
-      width,
-      height
-    });
-
-    return res;
-  }, []);
-
-  const width = Math[minMaxFunc](...imgData.map((el) => el.width));
-  const height = Math[minMaxFunc](...imgData.map((el) => el.height));
-
-  imgData = await Promise.all(imgData.map(async (res) => {
-    try {
-      res = await new Promise(resolve => {
-        if (direction) {
-          res.img.resize(width, ((res.height / res.width) * width), (err, res) => {
-            resolve(res);
-          });
-        } else {
-          res.img.resize(((res.width / res.height) * height), height, (err, res) => {
-            resolve(res);
-          });
+            return read(src)
+                .then((imgObj) => ({
+                    img: imgObj,
+                }));
         }
-      });
-    } catch (e) {
-      console.log(e)
-    }
-    return {
-      img: res,
-      width: res.bitmap.width,
-      height: res.bitmap.height
+
+        return read(img).then((imgObj) => ({img: imgObj}));
     };
-  }));
 
-  const {top, right, bottom, left} = calcMargin(margin);
-  const marginTopBottom = top + bottom;
-  const marginRightLeft = right + left;
+    direction = (direction === 'row');
+    const minMaxFunc = shrink ? 'min' : 'max';
 
-  const totalWidth = direction
-    ? width
-    : imgData.reduce((res, {width}, index) => res + width + (Number(index > 0) * offset), 0);
+    let imgs = await Promise.all(images.map(processImg));
 
-  const totalHeight = direction
-    ? imgData.reduce((res, {height}, index) => res + height + (Number(index > 0) * offset), 0)
-    : height;
+    let imgData = imgs.reduce((res, {img}) => {
+        const {bitmap: {width, height}} = img;
 
-  const baseImage = new Jimp(totalWidth + marginRightLeft, totalHeight + marginTopBottom, color);
+        res.push({
+            img,
+            width,
+            height
+        });
 
-  const imgDataEntries = imgData.map((data, index) => [index, data]);
+        return res;
+    }, []);
 
-  for (const [index, {img, height, width}] of imgDataEntries) {
-    const [px, py] = direction
-      ? [(totalWidth - width) / 2, index * (height + offset)]
-      : [index * (width + offset), (totalHeight - height) / 2];
+    const width = Math[minMaxFunc](...imgData.map((el) => el.width));
+    const height = Math[minMaxFunc](...imgData.map((el) => el.height));
 
-    baseImage.composite(img, px + left, py + top);
-  }
+    imgData = await Promise.all(imgData.map(async (res) => {
+        try {
+            res = await new Promise(resolve => {
+                if (direction) {
+                    res.img.resize(width, ((res.height / res.width) * width), (err, res) => {
+                        resolve(res);
+                    });
+                } else {
+                    res.img.resize(((res.width / res.height) * height), height, (err, res) => {
+                        resolve(res);
+                    });
+                }
+            });
+        } catch (e) {
+            console.log(e)
+        }
+        return {
+            img: res,
+            width: res.bitmap.width,
+            height: res.bitmap.height
+        };
+    }));
 
-  return baseImage;
+    const {top, right, bottom, left} = calcMargin(margin);
+    const marginTopBottom = top + bottom;
+    const marginRightLeft = right + left;
+
+    const totalWidth = direction
+        ? width
+        : imgData.reduce((res, {width}, index) => res + width + (Number(index > 0) * offset), 0);
+
+    const totalHeight = direction
+        ? imgData.reduce((res, {height}, index) => res + height + (Number(index > 0) * offset), 0)
+        : height;
+
+    const baseImage = new Jimp(totalWidth + marginRightLeft, totalHeight + marginTopBottom, color);
+
+    let offsetX = 0;
+    let offsetY = 0;
+    for (const {img, height, width} of imgData) {
+        const [px, py] = direction
+            ? [0, offsetY + offset]
+            : [offsetX + offset, 0];
+        offsetY += height;
+        offsetX += width;
+        baseImage.composite(img, px + left, py + top);
+    }
+
+    return baseImage;
 }
