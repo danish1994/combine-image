@@ -2,6 +2,8 @@
 
 [![NPM](https://nodei.co/npm/combine-image.png)](https://nodei.co/npm/combine-image/)
 
+## This project is not actively developed. Please feel free to fork or add changes as per the requirements.
+
 > Combine multiple images into a single image
 
 `combine-image` combines given images into a single image in right order. This will be helpful in a situation when you have to generate a preview of multiple images into a single image. This module is based on [`Jimp`] for image processing.
